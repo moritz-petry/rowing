@@ -3,6 +3,9 @@ import {CONFIG} from './config.js';
 import {drawRace} from './render.js';
 const root=document.getElementById('scull-pov'),q=s=>root.querySelector(s);
 const canvas=q('canvas'),pull=q('.pull'),feedback=q('.feedback');
+const nickname=q('.nickname'),nicknameKey='scull-player-name';
+try{nickname.value=localStorage.getItem(nicknameKey)||'';}catch{}
+nickname.addEventListener('input',()=>{try{localStorage.setItem(nicknameKey,nickname.value);}catch{}});
 let race=createRace(123),started=false,ranked=false,credentials=null,events=[],last=0,budget=0;
 let pointerSteer=0,keys={a:false,d:false},token='',widgetId=null,busy=false,page=0;
 let runGeneration=0,pendingCheck=null;
