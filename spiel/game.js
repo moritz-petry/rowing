@@ -1,3 +1,4 @@
+import {nameError} from './name-policy.js?v=20261111-filter';
 import {createRace, input, advance, STEP, VERSION} from './engine.js';
 import {CONFIG} from './config.js';
 import {drawRace} from './render.js?v=20261111-lobby';
@@ -43,7 +44,7 @@ function reset(){clearControls();failCheck('Rennstart abgebrochen.');runGenerati
 async function begin(isRanked){
   if(busy)return;
   const name=nickname.value.normalize('NFKC').trim();
-  if(!/^[\p{L}\p{N} _.-]{1,16}$/u.test(name)){q('.name-error').textContent='Bitte wähle einen Namen mit 1–16 Zeichen (Buchstaben, Zahlen, Leerzeichen, . _ -).';nickname.focus();return;}
+  const error=nameError(name);if(error){q('.name-error').textContent=error;nickname.focus();return;}
   q('.name-error').textContent='';nickname.value=name;try{localStorage.setItem(nicknameKey,name);}catch{}
   if(isRanked&&(!CONFIG.turnstileSiteKey||widgetId===null)){issue('Bot-Prüfung wird noch geladen. Bitte kurz warten.');return;}
   reset();const generation=runGeneration;busy=true;setButtons();
@@ -116,7 +117,7 @@ q('.leaderboard-link').addEventListener('click',()=>{q('#leaderboard').open=true
 q('.refresh').addEventListener('click',leaderboard);q('.previous').addEventListener('click',()=>{page=Math.max(0,page-1);leaderboard();});q('.next-page').addEventListener('click',()=>{page++;leaderboard();});
 q('.save').addEventListener('click',async()=>{
   if(!ranked||race.finish===null||!credentials||busy)return;
-  const name=q('.nickname').value.normalize('NFKC').trim();if(!/^[\p{L}\p{N} _.-]{1,16}$/u.test(name)){issue('Spitzname: 1–16 Buchstaben oder Zahlen; Punkt, _ und - sind erlaubt.');return;}
+  const name=q('.nickname').value.normalize('NFKC').trim();const error=nameError(name);if(error){issue(error);return;}
   busy=true;q('.save').disabled=true;const generation=runGeneration,submission={...credentials,events:events.map(e=>[...e])};
   try{const data=await api({action:'finish',id:submission.id,nonce:submission.nonce,events:submission.events,nickname:name});
     if(generation!==runGeneration)return;issue('Gespeichert! Bestätigte Zeit: '+(data.time_ms/1000).toFixed(2)+' s.');credentials=null;page=0;await leaderboard();
