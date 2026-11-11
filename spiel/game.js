@@ -6,6 +6,7 @@ const canvas=q('canvas'),pull=q('.pull'),feedback=q('.feedback');
 let race=createRace(123),started=false,ranked=false,credentials=null,events=[],last=0,budget=0;
 let pointerSteer=0,keys={a:false,d:false},token='',widgetId=null,busy=false,page=0;
 let runGeneration=0,pendingCheck=null;
+let spaceHeld=false,mainPointer=false;const sidePointers=new Map();
 function failCheck(message){if(pendingCheck){clearTimeout(pendingCheck.timer);const pending=pendingCheck;pendingCheck=null;pending.reject(Error(message));}}
 function verifyInvisible(){return new Promise((resolve,reject)=>{
   if(widgetId===null||!window.turnstile){reject(Error('Bot-Prüfung wird noch geladen.'));return;}
@@ -29,7 +30,9 @@ function syncSteer(){const value=keys.a||keys.d?(keys.a?1:0)-(keys.d?1:0):pointe
   if(value!==race.steer)action(value===1?'left':value===-1?'right':'neutral');}
 function down(){if(!started||race.holding||race.finish!==null)return;if(!events.length){last=performance.now();budget=0;}action('down');syncSteer();}
 function up(){if(race.holding)action('up');}
-function reset(){failCheck('Rennstart abgebrochen.');runGeneration++;started=false;ranked=false;credentials=null;race=createRace(123);events=[];keys={a:false,d:false};pointerSteer=0;budget=0;
+function syncControls(){pointerSteer=Array.from(sidePointers.values()).at(-1)||0;const drive=spaceHeld||mainPointer||keys.a||keys.d||sidePointers.size>0;if(drive)down();syncSteer();if(!drive)up();}
+function clearControls(){spaceHeld=mainPointer=false;keys={a:false,d:false};sidePointers.clear();pointerSteer=0;syncSteer();up();}
+function reset(){clearControls();failCheck('Rennstart abgebrochen.');runGeneration++;started=false;ranked=false;credentials=null;race=createRace(123);events=[];keys={a:false,d:false};pointerSteer=0;budget=0;
   q('.save').disabled=true;pull.disabled=true;q('.mode-status').textContent='Kein Rennen gestartet';issue('Üben oder Ranglistenrennen wählen.');render();}
 async function begin(isRanked){
   if(busy)return;
@@ -84,17 +87,14 @@ function tick(now){
   }
   last=now;render();requestAnimationFrame(tick);
 }
-pull.addEventListener('pointerdown',e=>{e.preventDefault();pull.setPointerCapture(e.pointerId);down();});
-pull.addEventListener('pointerup',up);pull.addEventListener('pointercancel',up);
-for(const [selector,value] of [['.over-left',1],['.over-right',-1]])q(selector).addEventListener('click',()=>{pointerSteer=pointerSteer===value?0:value;syncSteer();});
+pull.addEventListener('pointerdown',e=>{e.preventDefault();pull.setPointerCapture(e.pointerId);mainPointer=true;syncControls();});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])pull.addEventListener(event,()=>{mainPointer=false;syncControls();});
+for(const [selector,value] of [['.over-left',1],['.over-right',-1]]){const button=q(selector);button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);sidePointers.set(e.pointerId,value);syncControls();});for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,e=>{sidePointers.delete(e.pointerId);syncControls();});}
 q('.wave').addEventListener('click',()=>action('wave'));
-document.addEventListener('keydown',e=>{if(editable(e)||e.ctrlKey||e.metaKey||e.altKey)return;
-  if(!['Space','KeyA','KeyD','KeyW'].includes(e.code))return;e.preventDefault();if(e.repeat)return;
-  if(e.code==='Space')down();if(e.code==='KeyW')action('wave');
-  if(e.code==='KeyA'||e.code==='KeyD'){keys[e.code==='KeyA'?'a':'d']=true;pointerSteer=0;syncSteer();}
-});
-document.addEventListener('keyup',e=>{if(editable(e))return;if(e.code==='Space'){e.preventDefault();up();}if(e.code==='KeyA'||e.code==='KeyD'){keys[e.code==='KeyA'?'a':'d']=false;syncSteer();}});
-window.addEventListener('blur',()=>{up();keys.a=keys.d=false;pointerSteer=0;syncSteer();});
+document.addEventListener('keydown',e=>{if(editable(e)||e.ctrlKey||e.metaKey||e.altKey)return;if(!['Space','KeyA','KeyD','KeyW'].includes(e.code))return;e.preventDefault();if(e.repeat)return;if(e.code==='Space')spaceHeld=true;if(e.code==='KeyA'||e.code==='KeyD')keys[e.code==='KeyA'?'a':'d']=true;if(e.code==='KeyW')action('wave');else syncControls();});
+document.addEventListener('keyup',e=>{if(!['Space','KeyA','KeyD'].includes(e.code))return;if(!editable(e))e.preventDefault();if(e.code==='Space')spaceHeld=false;else keys[e.code==='KeyA'?'a':'d']=false;syncControls();});
+window.addEventListener('blur',clearControls);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearControls();});
 q('.restart').addEventListener('click',reset);q('.practice-start').addEventListener('click',()=>begin(false));q('.ranked-start').addEventListener('click',()=>begin(true));
 async function leaderboard(){q('.board-status').textContent='Rangliste wird geladen …';
   try{const data=await api({action:'leaderboard',page});const tb=q('tbody');tb.replaceChildren();
