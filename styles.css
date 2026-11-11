@@ -13,3 +13,21 @@
 .gallery-note{font-size:11px;color:#536773;margin-top:25px}
 @media(max-width:700px){.hero-art.portrait{min-height:0;height:auto;aspect-ratio:1/1}.photos{grid-template-columns:1fr}.photos figure:first-child{grid-column:auto}.photos img{height:auto;aspect-ratio:auto}.photos figure:first-child img{max-height:none}}
 @media(prefers-reduced-motion:reduce){.photos img{transition:none}.photos a:hover img{transform:none}}
+/* Verfeinerte Typografie und Bildlegenden */
+.gallery .section-top{border-bottom:1px solid #c9c9be;padding-bottom:24px;margin-bottom:36px}
+.photos{gap:40px 28px}
+.photos figure{min-width:0}
+.photos a{border-radius:2px}
+.photos figcaption{display:flex;gap:16px;align-items:flex-start;padding:17px 0 0;border-top:1px solid #c9c9be;margin-top:12px}
+.photo-index{font-size:10px;letter-spacing:1px;color:#786132;padding-top:5px}
+.photos figcaption h3{font:normal 23px/1.25 Georgia,serif;letter-spacing:-.3px;margin:0 0 5px}
+.photos figcaption p{font-size:12px;line-height:1.6;color:#526570;margin:0}
+.photo-arrow{margin-left:auto;font-size:20px;color:#786132}
+.hero-copy .lead{max-width:340px}
+.profile .eyebrow,.gallery .eyebrow,.contact .eyebrow{color:#79602f}
+.privacy.wrap{padding-top:35px;padding-bottom:35px}
+.privacy details{border-color:#c9c9be}
+.privacy summary{font:normal 16px/1.5 Arial,Helvetica,sans-serif;padding:16px 0}
+.privacy p{max-width:850px;font-size:12px;color:#526570}
+.privacy p a{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:700px){.photos{gap:30px}.photos figcaption h3{font-size:21px}.photos figcaption{gap:12px}.highlights{grid-template-columns:1fr}.highlights article{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.highlights article>span{grid-column:1/-1}.highlights strong{margin:10px 0}.highlights p{margin:10px 0;align-self:center}.section-top h2{font-size:35px}}
