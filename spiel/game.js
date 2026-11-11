@@ -1,9 +1,12 @@
 import {createRace, input, advance, STEP, VERSION} from './engine.js';
 import {CONFIG} from './config.js';
-import {drawRace} from './render.js';
+import {drawRace} from './render.js?v=20261111-lobby';
 const root=document.getElementById('scull-pov'),q=s=>root.querySelector(s);
 const canvas=q('canvas'),pull=q('.pull'),feedback=q('.feedback');
 const nickname=q('.nickname'),nicknameKey='scull-player-name';
+let personalBest=0;try{personalBest=Number(localStorage.getItem('scull-personal-best'))||0;}catch{}
+function showBest(){q('.personal-best').textContent=personalBest?(personalBest/1000).toFixed(2)+' s':'Noch kein Rennen';}
+showBest();
 try{nickname.value=localStorage.getItem(nicknameKey)||'';}catch{}
 nickname.addEventListener('input',()=>{try{localStorage.setItem(nicknameKey,nickname.value);}catch{}});
 let race=createRace(123),started=false,ranked=false,credentials=null,events=[],last=0,budget=0;
@@ -36,9 +39,12 @@ function up(){if(race.holding)action('up');}
 function syncControls(){pointerSteer=Array.from(sidePointers.values()).at(-1)||0;const drive=spaceHeld||mainPointer||keys.a||keys.d||sidePointers.size>0;if(drive)down();syncSteer();if(!drive)up();}
 function clearControls(){spaceHeld=mainPointer=false;keys={a:false,d:false};sidePointers.clear();pointerSteer=0;syncSteer();up();}
 function reset(){clearControls();failCheck('Rennstart abgebrochen.');runGeneration++;started=false;ranked=false;credentials=null;race=createRace(123);events=[];keys={a:false,d:false};pointerSteer=0;budget=0;
-  q('.save').disabled=true;pull.disabled=true;q('.mode-status').textContent='Kein Rennen gestartet';issue('Üben oder Ranglistenrennen wählen.');render();}
+  q('.lobby').hidden=false;q('.race-view').hidden=true;q('.save').disabled=true;pull.disabled=true;q('.mode-status').textContent='Kein Rennen gestartet';issue('Üben oder Ranglistenrennen wählen.');render();}
 async function begin(isRanked){
   if(busy)return;
+  const name=nickname.value.normalize('NFKC').trim();
+  if(!/^[\p{L}\p{N} _.-]{1,16}$/u.test(name)){q('.name-error').textContent='Bitte wähle einen Namen mit 1–16 Zeichen (Buchstaben, Zahlen, Leerzeichen, . _ -).';nickname.focus();return;}
+  q('.name-error').textContent='';nickname.value=name;try{localStorage.setItem(nicknameKey,name);}catch{}
   if(isRanked&&(!CONFIG.turnstileSiteKey||widgetId===null)){issue('Bot-Prüfung wird noch geladen. Bitte kurz warten.');return;}
   reset();const generation=runGeneration;busy=true;setButtons();
   try{
@@ -47,7 +53,7 @@ async function begin(isRanked){
     if(generation!==runGeneration)return;
     if(session&&session.version!==VERSION)throw Error('Spielversion veraltet. Bitte Seite neu laden.');
     credentials=session;ranked=isRanked;race=createRace(session?session.seed:123);
-    started=true;budget=0;last=performance.now();pull.disabled=false;
+    started=true;budget=0;last=performance.now();pull.disabled=false;q('.lobby').hidden=true;q('.race-view').hidden=false;q('.race-view').scrollIntoView({block:'start',behavior:'smooth'});
     q('.mode-status').textContent=isRanked?'Ranglistenrennen · Eingaben werden zur Prüfung aufgezeichnet':'Übungsrennen · keine Veröffentlichung';
     issue('Los! Leertaste oder Ruderbutton halten.');
   }catch(e){if(generation===runGeneration)issue(e.message||'Rennstart fehlgeschlagen.');}
@@ -67,8 +73,8 @@ function render(){
   q('.meter-target').textContent=race.recovery?'Goldfenster: wieder einsetzen':'Goldfenster: loslassen';
   q('.phase').textContent=race.finish!==null?'IM ZIEL':race.holding?'DURCHZUG · BEIDE SKULLS':race.recovery?'VORROLLEN · BLÄTTER FLACH':'BEREIT AM EINSATZ';
   pull.textContent=race.holding?'Ziehen … dann loslassen':race.recovery?'Einsatz vorbereiten':'Halten & ziehen';
-  q('.course-dot').style.left=(50+Math.max(-1,Math.min(1,race.lateral))*44)+'%';
-  q('.course-value').textContent=(Math.abs(race.lateral)<.12?'Mitte':race.lateral>0?'Rechts versetzt':'Links versetzt')+' · '+race.hits+' Kontakte';
+  q('.course-dot').style.left=(50+Math.max(-1,Math.min(1,-race.lateral))*44)+'%';
+  q('.course-value').textContent=(Math.abs(race.lateral)<.12?'Mitte':race.lateral>0?'Links versetzt':'Rechts versetzt')+' · '+race.hits+' Kontakte';
   q('.over-left').setAttribute('aria-pressed',String(race.steer===1));q('.over-right').setAttribute('aria-pressed',String(race.steer===-1));
   const waveAge=race.wave?now-race.wave.born:0;
   q('.wave').classList.toggle('wave-ready',!!race.wave&&!race.wave.handled&&waveAge>=100&&waveAge<=700);
@@ -86,7 +92,7 @@ function tick(now){
     let iterations=0;while(budget>=STEP&&iterations++<500){advance(race);budget-=STEP;if(race.finish!==null)break;}
     if(race.message!==seenMessage){seenMessage=race.message;issue(seenMessage);}
     if(race.step>=60000&&race.finish===null){started=false;pull.disabled=true;issue('Rennen nach zehn Minuten beendet. Bitte neu starten.');}
-    if(race.finish!==null){pull.disabled=true;q('.save').disabled=!ranked;issue('Im Ziel: '+(race.finish/1000).toFixed(2)+' s. '+(ranked?'Spitznamen eingeben und Ergebnis prüfen lassen.':'Übungszeit – starte ein Ranglistenrennen für eine Veröffentlichung.'));}
+    if(race.finish!==null){if(!personalBest||race.finish<personalBest){personalBest=race.finish;try{localStorage.setItem('scull-personal-best',String(personalBest));}catch{}showBest();}pull.disabled=true;q('.save').disabled=!ranked;issue('Im Ziel: '+(race.finish/1000).toFixed(2)+' s. '+(ranked?'Ergebnis unter '+nickname.value+' prüfen lassen.':'Übungszeit – starte ein Ranglistenrennen für eine Veröffentlichung.'));}
   }
   last=now;render();requestAnimationFrame(tick);
 }
@@ -106,6 +112,7 @@ async function leaderboard(){q('.board-status').textContent='Rangliste wird gela
     q('.previous').disabled=page===0;q('.next-page').disabled=!data.more;
   }catch{q('.board-status').textContent='Die Online-Rangliste ist noch nicht eingerichtet oder momentan nicht erreichbar.';}
 }
+q('.leaderboard-link').addEventListener('click',()=>{q('#leaderboard').open=true;});
 q('.refresh').addEventListener('click',leaderboard);q('.previous').addEventListener('click',()=>{page=Math.max(0,page-1);leaderboard();});q('.next-page').addEventListener('click',()=>{page++;leaderboard();});
 q('.save').addEventListener('click',async()=>{
   if(!ranked||race.finish===null||!credentials||busy)return;
