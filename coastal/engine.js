@@ -2,14 +2,14 @@ export const outbound=[{x:210,y:520},{x:330,y:400},{x:210,y:280},{x:235,y:160}];
 export const turn=[{x:235,y:110},{x:254,y:64},{x:300,y:45},{x:346,y:64},{x:365,y:110},{x:365,y:160}];
 export const inbound=[{x:390,y:280},{x:270,y:400},{x:390,y:520},{x:340,y:650}];
 export const obstacles=[{x:180,y:785,r:20},{x:245,y:730,r:22},{x:340,y:780,r:20},{x:395,y:710,r:22}];
-export function create(){return {phase:0,x:180,y:855,a:0,speed:0,time:0,index:0,holding:false,held:0,recovery:0,progress:0,target:.7,strokes:0,combo:0,hits:0,cooldown:0,jump:0,wave:0,nextWave:12,message:'Halte Laufen und weiche dem Treibholz aus.',done:false};}
+export function create(){return {phase:0,x:180,y:855,a:0,speed:0,time:0,index:0,holding:false,held:0,recovery:0,progress:0,target:.7,strokes:0,combo:0,hits:0,cooldown:0,jump:0,wave:0,nextWave:12,message:'Mit den Pfeiltasten zum Boot laufen. W springt über Treibholz.',done:false};}
 export function waypoint(s){return (s.phase===1?outbound:s.phase===2?turn:s.phase===3?inbound:[])[s.index];}
 export function release(s){if(!s.holding)return;s.holding=false;if(s.phase===0||s.phase===4)return;const quality=Math.exp(-Math.pow((s.held-s.target*.82)/.18,2));s.combo=quality>.65?s.combo+1:0;s.speed=Math.min(75,s.speed+9+quality*(27+Math.min(s.combo,6)*3));s.recovery=.65;s.message=quality>.65?'Sauberer Schlag. Nächstes Tor ansteuern.':'Im Goldfenster loslassen für mehr Tempo.';}
 export function update(s,dt,c){if(s.done)return;s.time+=dt;s.cooldown=Math.max(0,s.cooldown-dt);s.jump=Math.max(0,s.jump-dt);const running=s.phase===0||s.phase===4,drive=c.drive||c.left||c.right,side=(c.left?1:0)-(c.right?1:0);
 if(c.action){if(running)s.jump=.85;else if(s.wave>0){s.wave=0;s.message='Welle abgefangen.';}}
 if(drive&&!s.holding){s.holding=true;s.held=0;s.target=.58+.25*(.5+.5*Math.sin(++s.strokes*2.13));}if(!drive&&s.holding)release(s);
 if(s.holding){s.held+=dt;s.progress=Math.min(1,s.held/.82);}else{s.recovery=Math.max(0,s.recovery-dt);s.progress=s.recovery/.65;}
-if(running){s.x=Math.max(115,Math.min(485,s.x-side*125*dt));s.speed+=(drive?100:0)*dt;s.speed*=Math.exp(-1.7*dt);s.speed=Math.min(65,s.speed);s.y+=(s.phase===0?-1:1)*s.speed*dt;
+if(running){const moveY=c.up?-1:c.down?1:c.drive?(s.phase===0?-1:1):0;s.x=Math.max(115,Math.min(485,s.x-side*125*dt));s.speed+=(moveY?100:0)*dt;s.speed*=Math.exp(-1.7*dt);s.speed=Math.min(65,s.speed);s.y+=moveY*s.speed*dt;
 for(const o of obstacles)if(Math.hypot(s.x-o.x,s.y-o.y)<o.r+10&&s.jump<=0&&s.cooldown<=0){s.speed*=.25;s.cooldown=1.2;s.hits++;s.message='Treibholz! Seitlich ausweichen oder mit W springen.';}
 if(s.phase===0&&s.y<=655){s.phase=1;s.x=210;s.y=645;s.a=0;s.speed=20;s.holding=false;s.message='Im Boot: Goldfenster treffen und die goldenen Tore durchfahren.';}
 if(s.phase===4&&s.y>=855){s.done=true;s.speed=0;s.message='Im Ziel!';}return;}
