@@ -1,6 +1,7 @@
-export const outbound=[{x:210,y:520},{x:330,y:400},{x:210,y:280},{x:235,y:160}];
+export const outbound=[{x:250,y:520},{x:350,y:370},{x:250,y:220}];
+export const buoys=[{x:300,y:520},{x:300,y:370},{x:300,y:220}];
 export const turn=[{x:235,y:110},{x:254,y:64},{x:300,y:45},{x:346,y:64},{x:365,y:110},{x:365,y:160}];
-export const inbound=[{x:390,y:280},{x:270,y:400},{x:390,y:520},{x:340,y:650}];
+export const inbound=[{x:390,y:650}];
 export const obstacles=[{x:180,y:785,r:20},{x:245,y:730,r:22},{x:340,y:780,r:20},{x:395,y:710,r:22}];
 export function create(){return {phase:0,x:180,y:855,a:0,speed:0,time:0,index:0,holding:false,held:0,recovery:0,progress:0,target:.7,strokes:0,combo:0,hits:0,cooldown:0,jump:0,wave:0,nextWave:12,message:'Mit den Pfeiltasten zum Boot laufen. W springt über Treibholz.',done:false};}
 export function waypoint(s){return (s.phase===1?outbound:s.phase===2?turn:s.phase===3?inbound:[])[s.index];}
@@ -16,7 +17,10 @@ if(s.phase===4&&s.y>=855){s.done=true;s.speed=0;s.message='Im Ziel!';}return;}
 if(s.holding&&side){s.a+=side*(s.phase===2?2.5:1.8)*dt;s.speed*=Math.exp(-.85*dt);}
 s.speed*=Math.exp(-.32*dt);s.x+=Math.sin(s.a)*s.speed*dt;s.y-=Math.cos(s.a)*s.speed*dt;
 if(s.x<85||s.x>515||s.y<15||s.y>680){s.x=Math.max(85,Math.min(515,s.x));s.y=Math.max(15,Math.min(680,s.y));s.speed*=.8;}
-const target=waypoint(s);if(target&&Math.hypot(s.x-target.x,s.y-target.y)<32){s.index++;s.message=s.phase===2?'Weiter um die Wendeboje – eine halbe Runde.':'Tor geschafft! Nächstes goldenes Tor ansteuern.';const count=s.phase===1?outbound.length:s.phase===2?turn.length:inbound.length;if(s.index>=count){s.phase++;s.index=0;if(s.phase===4){s.x=340;s.y=665;s.speed=25;s.holding=false;s.message='An Land! Noch einmal laufen bis zur Ziellinie.';}else if(s.phase===2)s.message='180°-Wende: links stärker halten und um die grosse Boje rudern.';else s.message='Zurück zum Strand: rechten Slalom durchfahren.';}}
-for(const p of [...outbound,...inbound])for(const offset of [-45,45])if(Math.hypot(s.x-(p.x+offset),s.y-p.y)<17&&s.cooldown<=0){s.speed*=.45;s.cooldown=1;s.hits++;s.message='Bojenkontakt – Tempo verloren.';}
+const target=waypoint(s);if(target&&Math.hypot(s.x-target.x,s.y-target.y)<32){s.index++;s.message=s.phase===2?'Weiter um die Wendeboje – eine halbe Runde.':'Tor geschafft! Nächstes goldenes Tor ansteuern.';const count=s.phase===1?outbound.length:s.phase===2?turn.length:inbound.length;if(s.index>=count){s.phase++;s.index=0;if(s.phase===4){s.x=340;s.y=665;s.speed=25;s.holding=false;s.message='An Land! Noch einmal laufen bis zur Ziellinie.';}else if(s.phase===2)s.message='180°-Wende: links stärker halten und um die grosse Boje rudern.';else s.message='Direkt zum Strand zurückrudern – ohne Slalom.';}}
+for(const p of buoys)if(Math.hypot(s.x-p.x,s.y-p.y)<23&&s.cooldown<=0){s.speed*=.45;s.cooldown=1;s.hits++;s.message='Bojenkontakt – Tempo verloren.';}
 if(s.time>=s.nextWave&&!s.wave){s.wave=1.6;s.nextWave=s.time+14;s.message='Welle! Jetzt W oder Wellentaste.';}if(s.wave){s.wave-=dt;if(s.wave<=0){s.wave=0;s.speed*=.6;s.message='Welle verpasst – nächstes Mal W tippen.';}}
 }
+
+export const COASTAL_VERSION="coastal-sprint-v1";
+export function replayCoastal(events){if(!Array.isArray(events)||events.length<2||events.length>6000)throw Error("Invalid replay");let last=-1;for(const e of events){if(!Array.isArray(e)||e.length!==2||!Number.isInteger(e[0])||e[0]<0||e[0]<=last||e[0]>30000||!Number.isInteger(e[1])||e[1]<0||e[1]>63)throw Error("Invalid input");last=e[0];}const s=create();let at=0,mask=0;for(let step=0;step<30000;step++){if(at<events.length&&events[at][0]===step)mask=events[at++][1];update(s,.02,{drive:!!(mask&1),left:!!(mask&2),right:!!(mask&4),up:!!(mask&8),down:!!(mask&16),action:!!(mask&32)});mask&=31;if(s.done){if(at!==events.length)throw Error("Trailing input");return {finish:Math.round(s.time*1000)};}}throw Error("Unfinished race");}
