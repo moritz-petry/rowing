@@ -1,7 +1,7 @@
 import {nameError} from './name-policy.js?v=20261111-filter';
 import {createRace, input, advance, STEP, VERSION} from './engine.js';
 import {CONFIG} from './config.js';
-import {drawRace} from './render.js?v=20261112-direction';
+import {drawRace} from './render.js?v=20261112-stern';
 const root=document.getElementById('scull-pov'),q=s=>root.querySelector(s);
 const canvas=q('canvas'),pull=q('.pull'),feedback=q('.feedback');
 const nickname=q('.nickname'),nicknameKey='scull-player-name';
@@ -33,9 +33,7 @@ function action(type){
   // Apply and record at the same deterministic simulation step.
   events.push([race.step,type]);input(race,type);
 }
-function syncSteer(){const screenSide=keys.a||keys.d?(keys.a?1:0)-(keys.d?1:0):pointerSteer;
-  // Right-hand overpull produces leftward yaw; retain the server's signed replay inputs.
-  const value=-screenSide;
+function syncSteer(){const value=keys.a||keys.d?(keys.a?1:0)-(keys.d?1:0):pointerSteer;
   if(value!==race.steer)action(value===1?'left':value===-1?'right':'neutral');}
 function down(){if(!started||race.holding||race.finish!==null)return;if(!events.length){last=performance.now();budget=0;}action('down');syncSteer();}
 function up(){if(race.holding)action('up');}
@@ -76,13 +74,13 @@ function render(){
   q('.meter-target').textContent=race.recovery?'Goldfenster: wieder einsetzen':'Goldfenster: loslassen';
   q('.phase').textContent=race.finish!==null?'IM ZIEL':race.holding?'DURCHZUG · BEIDE SKULLS':race.recovery?'VORROLLEN · BLÄTTER FLACH':'BEREIT AM EINSATZ';
   pull.textContent=race.holding?'Ziehen … dann loslassen':race.recovery?'Einsatz vorbereiten':'Halten & ziehen';
-  q('.course-dot').style.left=(50+Math.max(-1,Math.min(1,race.lateral))*44)+'%';
-  q('.course-value').textContent=(Math.abs(race.lateral)<.12?'Mitte':race.lateral>0?'Rechts versetzt':'Links versetzt')+' · '+race.hits+' Kontakte';
-  q('.over-left').setAttribute('aria-pressed',String(race.steer===-1));q('.over-right').setAttribute('aria-pressed',String(race.steer===1));
+  q('.course-dot').style.left=(50+Math.max(-1,Math.min(1,-race.lateral))*44)+'%';
+  q('.course-value').textContent=(Math.abs(race.lateral)<.12?'Mitte':race.lateral>0?'Links versetzt':'Rechts versetzt')+' · '+race.hits+' Kontakte';
+  q('.over-left').setAttribute('aria-pressed',String(race.steer===1));q('.over-right').setAttribute('aria-pressed',String(race.steer===-1));
   const waveAge=race.wave?now-race.wave.born:0;
   q('.wave').classList.toggle('wave-ready',!!race.wave&&!race.wave.handled&&waveAge>=100&&waveAge<=700);
   let status='Kurs gerade';
-  if(Math.abs(race.lateral)>.12||Math.abs(race.yaw)>.1){const side=Math.abs(race.lateral)>.12?race.lateral:race.yaw;status=(Math.abs(race.lateral)>.8?'BOJENWARNUNG! ':'Korrigieren: ')+(side>0?'D · Rechts stärker':'A · Links stärker');}
+  if(Math.abs(race.lateral)>.12||Math.abs(race.yaw)>.1){const side=Math.abs(race.lateral)>.12?race.lateral:race.yaw;status=(Math.abs(race.lateral)>.8?'BOJENWARNUNG! ':'Korrigieren: ')+(side>0?'A · Links stärker':'D · Rechts stärker');}
   else if(race.steer)status='Kurs gerade – Korrektur wieder ausschalten.';
   if(race.wave)status+=' · '+(race.wave.handled?'Welle abgefangen':waveAge>=100&&waveAge<=700?'WELLE · JETZT W!':'Welle passiert');
   if(q('.event-status').textContent!==status)q('.event-status').textContent=status;
