@@ -6,3 +6,7 @@
 
 /* Keep stroke timing visible while watching the boat. */
 .scene-meter{position:absolute;bottom:18px;left:10px;right:10px;padding:10px 12px 8px;background:#102b3ef2;border:1px solid #d4b77488;border-radius:8px;pointer-events:none;box-shadow:0 3px 12px #00152255}.scene-meter .meter-head{font-size:12px;color:#fff;gap:10px}.scene-meter .track{height:22px;margin:7px 0 0;background:#ffffff25;border:1px solid #ffffff40}.scene-meter .zone{background:#f1cb6c}.scene-meter .marker{width:5px;background:#fff;box-shadow:0 0 4px #102b3e}.scene-meter:has(.track[hidden]){display:none}@media(max-width:600px){.scene-meter{bottom:18px;left:8px;right:8px;padding:8px 10px}.scene-meter .meter-head{font-size:11px}.scene-meter .track{height:24px}}
+
+.game-languages{display:inline-flex;gap:8px;align-items:center;font:12px Arial,sans-serif;margin:0 0 18px 16px;color:#102b3e}.game-languages a{padding:8px 4px;min-width:24px;text-align:center}.game-languages [aria-current=page]{font-weight:bold;border-bottom:2px solid #ad8c4e}.game-languages span{opacity:.5}
+
+@media(max-width:600px){.race canvas{height:clamp(200px,calc(100svh - 390px),400px)}.race .hint{min-height:30px;margin:8px 0;font-size:12px}.race .steps{margin:12px 0}.race .touch button{min-height:68px}.race .touch .wave{min-height:46px}.race .race-top{font-size:13px}.race .penalty{margin-top:6px;font-size:11px}nav{flex-wrap:wrap;gap:8px}nav .game-languages{margin:0}.race-top .reset{font-size:10px}}
