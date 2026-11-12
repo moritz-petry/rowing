@@ -1,5 +1,5 @@
 import {CONFIG} from '../spiel/config.js';
-import {create,update,waypoint,outbound,inbound,turn,obstacles,buoys,COASTAL_VERSION} from './engine.js?v=6';
+import {create,update,waypoint,outbound,inbound,turn,obstacles,buoys,COASTAL_VERSION} from './engine.js?v=7';
 import {nameError} from '../spiel/name-policy.js?v=20261111-filter';
 const q=s=>document.querySelector(s),canvas=q('canvas'),ctx=canvas.getContext('2d');let credential=null,events=[],simStep=0,accumulator=0,previousMask=-1,ranked=false,raceName='',generation=0,busy=false,widgetId=null,pending=null,champion=null,ghostRun=null,ghostState=null,ghostAt=0,ghostMask=0,duel=false;
 let state=create(),active=false,last=0,best=0,controls={drive:false,left:false,right:false,action:false},pointers=new Map(),keys=new Set();

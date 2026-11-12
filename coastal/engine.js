@@ -7,7 +7,7 @@ export function create(){return {phase:0,x:180,y:855,a:0,speed:0,time:0,index:0,
 export function waypoint(s){return (s.phase===1?outbound:s.phase===2?turn:s.phase===3?inbound:[])[s.index];}
 export function release(s){if(!s.holding)return;s.holding=false;if(s.phase===0||s.phase===4)return;const quality=Math.exp(-Math.pow((s.held-s.target*.82)/.18,2));s.combo=quality>.65?s.combo+1:0;s.speed=Math.min(75,s.speed+9+quality*(27+Math.min(s.combo,6)*3));s.recovery=.65;s.message=quality>.65?'Sauberer Schlag. Nächstes Tor ansteuern.':'Im Goldfenster loslassen für mehr Tempo.';}
 export function update(s,dt,c){if(s.done)return;s.time+=dt;s.cooldown=Math.max(0,s.cooldown-dt);s.jump=Math.max(0,s.jump-dt);const running=s.phase===0||s.phase===4,drive=c.drive||c.left||c.right,side=(c.left?1:0)-(c.right?1:0);
-if(c.action){if(running&&s.jump<=0)s.jump=.85;else if(!running&&s.wave>0&&!s.waveHandled){s.waveHandled=true;s.message='Welle abgefangen – Kurs weiter korrigieren.';}}
+if(c.action){if(running&&s.jump<=0){s.jump=.85;s.speed=Math.max(45,s.speed);}else if(!running&&s.wave>0&&!s.waveHandled){s.waveHandled=true;s.message='Welle abgefangen – Kurs weiter korrigieren.';}}
 if(drive&&!s.holding){s.holding=true;s.held=0;s.target=.58+.25*(.5+.5*Math.sin(++s.strokes*2.13));}if(!drive&&s.holding)release(s);
 if(s.holding){s.held+=dt;s.progress=Math.min(1,s.held/.82);}else{s.recovery=Math.max(0,s.recovery-dt);s.progress=s.recovery/.65;}
 if(running){const moveY=c.up?-1:c.down?1:c.drive?(s.phase===0?-1:1):0;s.x=Math.max(115,Math.min(485,s.x-side*65*dt));s.speed+=(moveY?100:0)*dt;s.speed*=Math.exp(-1.7*dt);s.speed=Math.min(65,s.speed);s.y+=moveY*s.speed*dt;
